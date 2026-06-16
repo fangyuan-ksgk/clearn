@@ -65,18 +65,15 @@ class HyperLoRA(nn.Module):
             nn.init.zeros_(g[-1].bias)
 
     def forward(self, H):
-        """H: [B, N, d] (or [N, d] -> treated as B=1). Returns list of (A[B,r,in], B[B,out,r]).
-
-        Vectorized: all M=(layers x targets) modules are generated in two batched
-        MLP calls (over a [B, M, r, *] tensor) rather than a Python loop, so cost is
-        independent of depth. The remaining loop only slices (no compute).
+        """
+        Takes in KV vectors and a learnable "bias" for each sub-module, predict the lora parameters
         """
         if H.dim() == 2:
             H = H.unsqueeze(0)
         B, M, r = H.shape[0], len(self.shapes), self.r
-        z = self.perceiver(H)                                       # [B,r,d_h]
+        z = self.perceiver(H)                           # -> same for all sub modules                # [B,r,d_h]
         zc = z.unsqueeze(1).expand(B, M, r, z.shape[-1])            # [B,M,r,d_h]
-        Ec = self.emb.weight.view(1, M, 1, -1).expand(B, M, r, -1)  # [B,M,r,emb]
+        Ec = self.emb.weight.view(1, M, 1, -1).expand(B, M, r, -1)  # [B,M,r,emb] -> different for each sub modules (ensure adaptor prediction are different for each submodules)
         cond = torch.cat([zc, Ec], dim=-1)
         A_all = self.gen_A(cond)                                    # [B,M,r,max_in]
         B_all = self.gen_B(cond)                                    # [B,M,r,max_out]

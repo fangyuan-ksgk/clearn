@@ -14,6 +14,11 @@ three regimes:
 Everything here is deliberately small and dependency-light so the demo notebook
 can import it directly.
 """
+
+# Q1. teacher is frozen all the time right? 
+# Q2. have we tested on non-0.5B models? 
+
+
 from __future__ import annotations
 import json, os, glob
 from dataclasses import dataclass
